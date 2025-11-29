@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import type { ScriptLine } from '../../lib/mockData';
-import { Edit2, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Save, X, Plus, Trash2 } from 'lucide-react';
 
 interface ScriptViewerProps {
     script: ScriptLine[];
@@ -43,12 +43,12 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen, onClose]);
 
-    const startEditing = (index: number, line: ScriptLine, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const startEditing = (index: number, line: ScriptLine) => {
         setEditingIndex(index);
         setEditText(line.text);
         setEditStart(line.start);
         setEditEnd(line.end);
+        onSeek(line.start); // Also seek to the start time
     };
 
     const saveEdit = (index: number, e: React.MouseEvent) => {
@@ -88,6 +88,13 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
         const newScript = [...script, newLine];
         onUpdateScript(newScript);
 
+        // Auto-enter edit mode for the new line
+        const newIndex = newScript.length - 1;
+        setEditingIndex(newIndex);
+        setEditText(newLine.text);
+        setEditStart(newLine.start);
+        setEditEnd(newLine.end);
+
         setTimeout(() => {
             if (containerRef.current) {
                 containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -105,7 +112,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
             <div className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-900/50 rounded-tl-xl">
                 <div>
                     <h3 className="text-white font-bold text-lg">Transcript Editor</h3>
-                    <p className="text-xs text-zinc-400">Click pencil to edit time & text</p>
+                    <p className="text-xs text-zinc-400">Click card to edit time & text</p>
                 </div>
                 <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
                     <X size={20} />
@@ -121,7 +128,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                         <div
                             key={index}
                             ref={isActive ? activeRef : null}
-                            onClick={() => !isEditing && onSeek(line.start)}
+                            onClick={() => !isEditing && startEditing(index, line)}
                             className={cn(
                                 "p-3 rounded-xl transition-all duration-200 border",
                                 isActive
@@ -149,13 +156,6 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                         >
                                             <Trash2 size={14} />
                                         </button>
-                                        <button
-                                            onClick={(e) => startEditing(index, line, e)}
-                                            className="text-zinc-500 hover:text-white p-1"
-                                            title="Edit"
-                                        >
-                                            <Edit2 size={14} />
-                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -170,6 +170,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                                 value={editStart}
                                                 onChange={(e) => setEditStart(Number(e.target.value))}
                                                 className="w-full bg-black/50 text-white p-1 rounded border border-white/10 text-xs"
+                                                onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -179,6 +180,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                                 value={editEnd}
                                                 onChange={(e) => setEditEnd(Number(e.target.value))}
                                                 className="w-full bg-black/50 text-white p-1 rounded border border-white/10 text-xs"
+                                                onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
                                     </div>

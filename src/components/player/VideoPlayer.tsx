@@ -180,7 +180,8 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
             className={cn("relative group bg-black overflow-hidden rounded-xl shadow-2xl", className)}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            onContextMenu={(e) => e.preventDefault()} // Disable right click
+            onContextMenu={(e) => e.preventDefault()}
+            style={{ containerType: 'inline-size' }} // Enable container queries
         >
             <video
                 ref={videoRef}
@@ -188,7 +189,7 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
                 poster={poster}
                 playsInline
                 onClick={togglePlay}
-                crossOrigin="anonymous" // Required for canvas export if video is from external source
+                crossOrigin="anonymous"
             />
 
             {/* Security Features */}

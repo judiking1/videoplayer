@@ -13,10 +13,15 @@ export default function SubtitleOverlay({ script, currentTime }: SubtitleOverlay
     if (!currentLine) return null;
 
     return (
-        <div className="absolute bottom-20 left-0 right-0 text-center pointer-events-none z-20 px-4">
-            <span className="inline-block bg-black/60 text-white text-lg md:text-xl font-medium px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm">
-                {currentLine.text}
-            </span>
+        <div className="absolute bottom-16 left-0 right-0 z-30 flex justify-center pointer-events-none px-8">
+            <div className="bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg text-center shadow-lg max-w-[80%]">
+                <p
+                    className="text-white font-medium leading-relaxed drop-shadow-md whitespace-nowrap"
+                    style={{ fontSize: 'clamp(10px, 2.5cqw, 24px)' }}
+                >
+                    {currentLine.text}
+                </p>
+            </div>
         </div>
     );
 }
