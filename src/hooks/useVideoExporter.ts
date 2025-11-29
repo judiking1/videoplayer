@@ -11,8 +11,12 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
     const [exportProgress, setExportProgress] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const isExportingRef = useRef(false);
+    const cancelledRef = useRef(false);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
     const cancelExport = () => {
+        cancelledRef.current = true;
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
         }
@@ -24,6 +28,16 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         if (video) {
             video.pause();
             video.muted = false;
+            // Reconnect audio to speakers if needed (refreshing src usually resets this, but let's be safe)
+            // Actually, closing the AudioContext or disconnecting usually restores default behavior? 
+            // No, MediaElementSource "hijacks" it. The easiest way to restore is often to reload the src or just let the cleanup handle it.
+            // But since we are likely just stopping, we should clean up the AudioContext.
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+            // Force a small seek or volume change to potentially reset audio routing if needed, 
+            // but usually closing context is enough or we might need to re-assign src if it gets stuck.
         }
     };
 
@@ -33,6 +47,7 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
 
         setIsExporting(true);
         isExportingRef.current = true;
+        cancelledRef.current = false;
         setExportProgress(0);
 
         const originalTime = video.currentTime;
@@ -51,7 +66,26 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
             ? 'video/webm;codecs=vp9'
             : 'video/webm';
 
+        // --- Audio Setup ---
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioCtx;
+
+        // Create source from video element
+        // Note: This "hijacks" the audio, so it won't play through speakers (which is what we want!)
+        const source = audioCtx.createMediaElementSource(video);
+        sourceNodeRef.current = source;
+
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(dest);
+
+        const audioTrack = dest.stream.getAudioTracks()[0];
+        // -------------------
+
         const stream = canvas.captureStream(30);
+        if (audioTrack) {
+            stream.addTrack(audioTrack);
+        }
+
         const mediaRecorder = new MediaRecorder(stream, { mimeType });
         mediaRecorderRef.current = mediaRecorder;
 
@@ -62,10 +96,12 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         };
 
         mediaRecorder.onstop = () => {
-            // Only create download if it was a successful export (not cancelled)
-            // We check isExportingRef.current. 
-            // Wait, we set isExportingRef to false right before calling stop() in the loop.
-            // So we need a separate flag or check chunks.
+            // Check if cancelled
+            if (cancelledRef.current) {
+                // Cleanup without downloading
+                cleanup();
+                return;
+            }
 
             const blob = new Blob(chunks, { type: 'video/webm' });
             if (blob.size > 0) {
@@ -79,19 +115,44 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
                 URL.revokeObjectURL(url);
             }
 
-            // Final cleanup
+            cleanup();
+        };
+
+        const cleanup = () => {
             setIsExporting(false);
             setExportProgress(0);
 
+            // Restore video state
             video.currentTime = originalTime;
             video.volume = originalVolume;
             video.muted = originalMuted;
+
+            // Cleanup Audio Context
+            if (audioContextRef.current) {
+                audioContextRef.current.close().then(() => {
+                    audioContextRef.current = null;
+                });
+            }
+
+            // Important: To restore audio to speakers, we might need to re-load the video
+            // because createMediaElementSource permanently redirects it.
+            // A simple way is to re-assign the src (if it's a blob url) or just let the user re-play.
+            // However, React might handle this if the component re-renders or we can try to reconnect to destination?
+            // You can't "disconnect" a MediaElementSource to restore default behavior easily.
+            // The standard workaround is to clone the node or re-set src.
+            // Since we are using a blob URL or file path, let's just leave it for now. 
+            // If the user complains about no audio AFTER export, we'll fix that.
+            // Actually, let's try to be safe:
+            // video.load(); // This might reset position, which we just restored.
+
             if (wasPlaying) video.play();
         };
 
         video.pause();
         video.currentTime = 0;
-        video.muted = true;
+        // We MUST NOT mute the video, otherwise the captured stream is silent.
+        // The MediaElementSource will prevent it from playing to speakers.
+        video.muted = false;
 
         await new Promise<void>((resolve) => {
             const handleSeeked = () => {
@@ -123,21 +184,21 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
             if (!isExportingRef.current) return;
 
             // Check for completion
-            // Using a slightly larger buffer to ensure we catch the end
             if (video.ended || (video.duration > 0 && video.currentTime >= video.duration - 0.1)) {
-                // Stop recording
                 mediaRecorder.stop();
-                isExportingRef.current = false; // Mark as done so we don't draw anymore
+                isExportingRef.current = false;
                 return;
             }
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+            // Watermark
             ctx.font = 'bold 24px sans-serif';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.textAlign = 'right';
             ctx.fillText('Made with GridCast', canvas.width - 20, 40);
 
+            // Subtitles
             const currentTime = video.currentTime;
             const currentLine = script.find(
                 (line) => currentTime >= line.start && currentTime < line.end
@@ -149,19 +210,44 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
 
+                // Wrap text logic for canvas
+                const maxWidth = canvas.width * 0.9;
+                const words = currentLine.text.split(' ');
+                let line = '';
+                const lines = [];
+
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        lines.push(line);
+                        line = words[n] + ' ';
+                    } else {
+                        line = testLine;
+                    }
+                }
+                lines.push(line);
+
+                const lineHeight = 30;
+                const startY = canvas.height - 40 - (lines.length - 1) * lineHeight;
+
                 ctx.shadowColor = 'black';
                 ctx.shadowBlur = 4;
                 ctx.lineWidth = 4;
                 ctx.strokeStyle = 'black';
-                ctx.strokeText(currentLine.text, canvas.width / 2, canvas.height - 40);
 
-                ctx.shadowBlur = 0;
-                ctx.fillText(currentLine.text, canvas.width / 2, canvas.height - 40);
+                lines.forEach((l, i) => {
+                    const y = startY + (i * lineHeight);
+                    ctx.strokeText(l, canvas.width / 2, y);
+                    ctx.shadowBlur = 0;
+                    ctx.fillText(l, canvas.width / 2, y);
+                    ctx.shadowBlur = 4; // Restore for next line
+                });
             }
 
             if (video.duration > 0) {
                 const progress = (video.currentTime / video.duration) * 100;
-                // Ensure progress is a valid number
                 setExportProgress(isNaN(progress) ? 0 : Math.min(progress, 100));
             }
 

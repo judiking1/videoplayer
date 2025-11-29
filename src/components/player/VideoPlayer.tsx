@@ -105,7 +105,9 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
         if (videoRef.current) {
             videoRef.current.volume = newVolume;
             setVolume(newVolume);
-            setIsMuted(newVolume === 0);
+            const shouldBeMuted = newVolume === 0;
+            setIsMuted(shouldBeMuted);
+            videoRef.current.muted = shouldBeMuted;
         }
     };
 
