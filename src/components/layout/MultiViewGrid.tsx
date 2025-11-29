@@ -33,6 +33,9 @@ export default function MultiViewGrid() {
         }));
 
         setVideos((prev) => [...prev, ...newVideos]);
+
+        // Reset input value to allow re-selecting the same file
+        event.target.value = '';
     };
 
     const removeVideo = (id: string) => {
@@ -47,7 +50,7 @@ export default function MultiViewGrid() {
                     <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <Zap size={20} className="text-white fill-white" />
                     </div>
-                    <h1 className="font-bold text-lg tracking-tight">GridCast Editor</h1>
+                    <h1 className="font-bold text-lg tracking-tight">GridCast Video Editor</h1>
                 </div>
 
                 <div className="flex items-center gap-4">

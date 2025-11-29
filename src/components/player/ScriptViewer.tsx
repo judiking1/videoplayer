@@ -107,19 +107,17 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
     return (
         <div
             ref={panelRef}
-            className="absolute top-0 right-0 bottom-24 w-96 bg-black/95 backdrop-blur-xl border-l border-white/10 z-40 flex flex-col transition-transform duration-300 shadow-2xl rounded-bl-xl"
+            className="absolute top-0 right-0 bottom-20 bg-black/95 backdrop-blur-xl border-l border-white/10 z-40 flex flex-col transition-transform duration-300 shadow-2xl rounded-bl-xl"
+            style={{ width: 'clamp(220px, 25cqw, 280px)' }}
         >
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-900/50 rounded-tl-xl">
-                <div>
-                    <h3 className="text-white font-bold text-lg">Transcript Editor</h3>
-                    <p className="text-xs text-zinc-400">Click card to edit time & text</p>
-                </div>
+            <div className="border-b border-white/10 flex justify-between items-center bg-zinc-900/50 rounded-tl-xl" style={{ padding: 'clamp(4px, 1.5cqw, 8px)' }}>
+                <h3 className="text-white font-bold leading-tight" style={{ fontSize: 'clamp(8px, 2cqw, 11px)' }}>Transcript Editor</h3>
                 <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
-                    <X size={20} />
+                    <X size={14} />
                 </button>
             </div>
 
-            <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div ref={containerRef} className="flex-1 overflow-y-auto space-y-2" style={{ padding: 'clamp(4px, 1.5cqw, 8px)' }}>
                 {script.map((line, index) => {
                     const isActive = currentTime >= line.start && currentTime < line.end;
                     const isEditing = editingIndex === index;
@@ -130,18 +128,19 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                             ref={isActive ? activeRef : null}
                             onClick={() => !isEditing && startEditing(index, line)}
                             className={cn(
-                                "p-3 rounded-xl transition-all duration-200 border",
+                                "rounded-lg transition-all duration-200 border",
                                 isActive
                                     ? "bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                                     : "bg-zinc-900/50 border-white/5 hover:bg-white/5 hover:border-white/10",
                                 isEditing ? "ring-2 ring-blue-500 border-transparent" : "cursor-pointer group"
                             )}
+                            style={{ padding: 'clamp(4px, 1.5cqw, 8px)' }}
                         >
                             <div className="flex justify-between items-start mb-1">
                                 <span className={cn(
-                                    "text-xs font-mono px-1.5 py-0.5 rounded",
+                                    "font-mono px-1.5 py-0.5 rounded",
                                     isActive ? "bg-blue-500/20 text-blue-300" : "bg-zinc-800 text-zinc-500"
-                                )}>
+                                )} style={{ fontSize: 'clamp(7px, 1.5cqw, 9px)' }}>
                                     {Math.floor(line.start / 60)}:{Math.floor(line.start % 60).toString().padStart(2, '0')}
                                     {' - '}
                                     {Math.floor(line.end / 60)}:{Math.floor(line.end % 60).toString().padStart(2, '0')}
@@ -154,7 +153,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                             className="text-zinc-500 hover:text-red-400 p-1"
                                             title="Delete"
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={10} />
                                         </button>
                                     </div>
                                 )}
@@ -164,22 +163,24 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                 <div className="mt-2 space-y-2">
                                     <div className="flex gap-2">
                                         <div className="flex-1">
-                                            <label className="text-[10px] text-zinc-500 block mb-1">Start (sec)</label>
+                                            <label className="text-zinc-500 block mb-1" style={{ fontSize: 'clamp(7px, 1.5cqw, 9px)' }}>Start</label>
                                             <input
                                                 type="number"
                                                 value={editStart}
                                                 onChange={(e) => setEditStart(Number(e.target.value))}
-                                                className="w-full bg-black/50 text-white p-1 rounded border border-white/10 text-xs"
+                                                className="w-full bg-black/50 text-white p-1 rounded border border-white/10"
+                                                style={{ fontSize: 'clamp(8px, 1.5cqw, 10px)' }}
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="text-[10px] text-zinc-500 block mb-1">End (sec)</label>
+                                            <label className="text-zinc-500 block mb-1" style={{ fontSize: 'clamp(7px, 1.5cqw, 9px)' }}>End</label>
                                             <input
                                                 type="number"
                                                 value={editEnd}
                                                 onChange={(e) => setEditEnd(Number(e.target.value))}
-                                                className="w-full bg-black/50 text-white p-1 rounded border border-white/10 text-xs"
+                                                className="w-full bg-black/50 text-white p-1 rounded border border-white/10"
+                                                style={{ fontSize: 'clamp(8px, 1.5cqw, 10px)' }}
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
@@ -187,27 +188,30 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
                                     <textarea
                                         value={editText}
                                         onChange={(e) => setEditText(e.target.value)}
-                                        className="w-full bg-black/50 text-white p-2 rounded border border-white/10 focus:outline-none focus:border-blue-500 text-sm min-h-[60px]"
+                                        className="w-full bg-black/50 text-white p-2 rounded border border-white/10 focus:outline-none focus:border-blue-500 min-h-[40px]"
+                                        style={{ fontSize: 'clamp(9px, 2cqw, 11px)' }}
                                         autoFocus
                                         onClick={(e) => e.stopPropagation()}
                                     />
                                     <div className="flex justify-end items-center mt-2 gap-2">
                                         <button
                                             onClick={(e) => cancelEdit(e)}
-                                            className="px-3 py-1 text-xs rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                                            className="px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                                            style={{ fontSize: 'clamp(8px, 1.5cqw, 10px)' }}
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             onClick={(e) => saveEdit(index, e)}
-                                            className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1"
+                                            className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1"
+                                            style={{ fontSize: 'clamp(8px, 1.5cqw, 10px)' }}
                                         >
-                                            <Save size={12} /> Save
+                                            <Save size={10} /> Save
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <p className={cn("text-sm leading-relaxed", isActive ? "text-blue-100" : "text-zinc-300")}>
+                                <p className={cn("leading-relaxed", isActive ? "text-blue-100" : "text-zinc-300")} style={{ fontSize: 'clamp(9px, 2cqw, 11px)' }}>
                                     {line.text}
                                 </p>
                             )}
@@ -217,9 +221,10 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
 
                 <button
                     onClick={addNewLine}
-                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm font-medium border border-dashed border-white/10 hover:border-white/20 mt-2"
+                    className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-2 font-medium border border-dashed border-white/10 hover:border-white/20 mt-2"
+                    style={{ fontSize: 'clamp(9px, 2cqw, 11px)' }}
                 >
-                    <Plus size={16} /> Add New Line
+                    <Plus size={12} /> Add New Line
                 </button>
             </div>
         </div>
