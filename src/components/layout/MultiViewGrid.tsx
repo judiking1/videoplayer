@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { X, Upload, Zap, Settings, Crown, LayoutGrid } from 'lucide-react';
+import { X, Upload, Zap, Crown, LayoutGrid } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 import VideoPlayer from '../player/VideoPlayer';
 import { cn } from '../../lib/utils';
+import AdBanner from '../ads/AdBanner';
+import PricingModal from '../payment/PricingModal';
 
 interface VideoInstance {
     id: string;
@@ -11,6 +15,8 @@ interface VideoInstance {
 }
 
 export default function MultiViewGrid() {
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [videos, setVideos] = useState<VideoInstance[]>([
         {
             id: 'demo-1',
@@ -55,7 +61,7 @@ export default function MultiViewGrid() {
 
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setIsProModalOpen(!isProModalOpen)}
+                        onClick={() => setIsProModalOpen(true)}
                         className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-all group"
                     >
                         <Crown size={14} className="text-indigo-400 group-hover:text-indigo-300" />
@@ -63,6 +69,22 @@ export default function MultiViewGrid() {
                     </button>
 
                     <div className="h-6 w-px bg-white/10 mx-2" />
+
+                    {user ? (
+                        <button
+                            onClick={() => navigate('/profile')}
+                            className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg border border-white/10 hover:scale-105 transition-transform"
+                        >
+                            {user.email?.[0].toUpperCase()}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="px-4 py-2 text-sm font-medium text-zinc-300 hover:text-white transition-colors"
+                        >
+                            Log In
+                        </button>
+                    )}
 
                     <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors text-sm font-medium shadow-lg shadow-blue-500/20">
                         <Upload size={18} />
@@ -76,9 +98,6 @@ export default function MultiViewGrid() {
                         />
                     </label>
 
-                    <button className="p-2 hover:bg-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors">
-                        <Settings size={20} />
-                    </button>
                 </div>
             </header>
 
@@ -135,7 +154,16 @@ export default function MultiViewGrid() {
                         </div>
                     )}
                 </div>
+
+                <div className="mt-4">
+                    <AdBanner />
+                </div>
             </main>
+
+            <PricingModal
+                isOpen={isProModalOpen}
+                onClose={() => setIsProModalOpen(false)}
+            />
         </div>
     );
 }

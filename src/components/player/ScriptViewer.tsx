@@ -112,9 +112,62 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
         >
             <div className="border-b border-white/10 flex justify-between items-center bg-zinc-900/50 rounded-tl-xl" style={{ padding: 'clamp(4px, 1.5cqw, 8px)' }}>
                 <h3 className="text-white font-bold leading-tight" style={{ fontSize: 'clamp(8px, 2cqw, 11px)' }}>Transcript Editor</h3>
-                <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
-                    <X size={14} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => {
+                            const exportData: Record<string, string> = {};
+                            script.forEach(line => {
+                                const key = `${Math.floor(line.start)}-${Math.floor(line.end)}`;
+                                exportData[key] = line.text;
+                            });
+                            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'subtitles.json';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}
+                        className="text-xs text-blue-400 hover:text-blue-300"
+                    >
+                        Export
+                    </button>
+                    <label className="text-xs text-green-400 hover:text-green-300 cursor-pointer">
+                        Import
+                        <input
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    try {
+                                        const json = JSON.parse(event.target?.result as string);
+                                        const newScript: ScriptLine[] = [];
+                                        Object.entries(json).forEach(([key, value]) => {
+                                            const [start, end] = key.split('-').map(Number);
+                                            if (!isNaN(start) && !isNaN(end) && typeof value === 'string') {
+                                                newScript.push({ start, end, text: value });
+                                            }
+                                        });
+                                        newScript.sort((a, b) => a.start - b.start);
+                                        onUpdateScript(newScript);
+                                    } catch (err) {
+                                        console.error("Invalid JSON format");
+                                        alert("Invalid JSON format");
+                                    }
+                                };
+                                reader.readAsText(file);
+                                e.target.value = ''; // Reset
+                            }}
+                        />
+                    </label>
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+                        <X size={14} />
+                    </button>
+                </div>
             </div>
 
             <div ref={containerRef} className="flex-1 overflow-y-auto space-y-2" style={{ padding: 'clamp(4px, 1.5cqw, 8px)' }}>
