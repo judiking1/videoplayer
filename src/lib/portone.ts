@@ -21,6 +21,29 @@ declare global {
         PortOne: any;
     }
 }
+export interface PaymentData {
+    orderName: string;
+    totalAmount: number;
+    currency: string;
+    payMethod: string;
+    customer: {
+        email?: string;
+        fullName?: string;
+        phoneNumber?: string;
+    };
+}
+
+export interface PaymentResponse {
+    code?: string;
+    paymentId?: string;
+    message?: string;
+}
+
+declare global {
+    interface Window {
+        PortOne: any;
+    }
+}
 
 export const requestPayment = async (data: PaymentData): Promise<PaymentResponse> => {
     if (!window.PortOne) {

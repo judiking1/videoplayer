@@ -95,6 +95,10 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                             <CheckCircle size={18} className="text-green-500 shrink-0" />
                             <span>Priority Rendering</span>
                         </div>
+                        <div className="flex items-center gap-3 text-zinc-200">
+                            <CheckCircle size={18} className="text-green-500 shrink-0" />
+                            <span>Subtitle Export (SRT/VTT)</span>
+                        </div>
                     </div>
 
                     <button

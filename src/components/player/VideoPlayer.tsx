@@ -17,9 +17,10 @@ interface VideoPlayerProps {
     poster?: string;
     autoPlay?: boolean;
     title?: string;
+    onUpgrade?: () => void;
 }
 
-export default function VideoPlayer({ src, type, className, poster, autoPlay = false, title }: VideoPlayerProps) {
+export default function VideoPlayer({ src, type, className, poster, autoPlay = false, title, onUpgrade }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -219,6 +220,7 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
                 onClose={() => setIsExportModalOpen(false)}
                 onExportFree={handleExportFree}
                 onExportPro={handleExportPro}
+                onUpgrade={onUpgrade}
             />
 
             {/* Export Progress Overlay */}

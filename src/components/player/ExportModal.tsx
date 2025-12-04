@@ -1,51 +1,20 @@
 import { useState } from 'react';
 import { Download, CheckCircle, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { requestPayment } from '../../lib/portone';
 
 interface ExportModalProps {
     isOpen: boolean;
     onClose: () => void;
     onExportFree: () => void;
     onExportPro: (quality: '1080p' | '4k') => void;
+    onUpgrade?: () => void;
 }
 
-export default function ExportModal({ isOpen, onClose, onExportFree, onExportPro }: ExportModalProps) {
-    const { user, isPro } = useAuthStore();
+export default function ExportModal({ isOpen, onClose, onExportFree, onExportPro, onUpgrade }: ExportModalProps) {
+    const { isPro } = useAuthStore();
     const [selectedQuality, setSelectedQuality] = useState<'1080p' | '4k'>('1080p');
-    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     if (!isOpen) return null;
-
-    const handlePayment = async () => {
-        if (!user) {
-            alert("Please log in to upgrade.");
-            return;
-        }
-
-        setIsProcessingPayment(true);
-        const response = await requestPayment({
-            pg: "html5_inicis", // Example PG
-            pay_method: "card",
-            merchant_uid: `mid_${new Date().getTime()}`,
-            name: "GridCast Pro Subscription",
-            amount: 9900,
-            buyer_email: user.email || "",
-            buyer_name: user.email?.split('@')[0] || "User",
-            buyer_tel: "010-1234-5678", // Placeholder
-        });
-
-        if (response.success) {
-            alert("Payment successful! You are now a Pro member.");
-            // Here you would typically verify the payment with your backend
-            // and update the user's status in Supabase.
-            // For now, we'll just reload to simulate the update (or we could update the store).
-            window.location.reload();
-        } else {
-            alert(`Payment failed: ${response.error_msg}`);
-        }
-        setIsProcessingPayment(false);
-    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
@@ -85,7 +54,7 @@ export default function ExportModal({ isOpen, onClose, onExportFree, onExportPro
                                 className="w-full py-3 rounded-xl bg-white text-black font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Download size={20} />
-                                Export Free
+                                export Free
                             </button>
                         </div>
                     </div>
@@ -111,6 +80,10 @@ export default function ExportModal({ isOpen, onClose, onExportFree, onExportPro
                                 <li className="flex items-center gap-2 text-white">
                                     <CheckCircle size={16} className="text-blue-400" />
                                     <span>Priority Rendering</span>
+                                </li>
+                                <li className="flex items-center gap-2 text-white">
+                                    <CheckCircle size={16} className="text-blue-400" />
+                                    <span>Subtitle Export (SRT/VTT)</span>
                                 </li>
                             </ul>
 
@@ -140,18 +113,14 @@ export default function ExportModal({ isOpen, onClose, onExportFree, onExportPro
                                 </div>
                             ) : (
                                 <button
-                                    onClick={handlePayment}
-                                    disabled={isProcessingPayment}
-                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                                    onClick={() => {
+                                        onClose();
+                                        onUpgrade?.();
+                                    }}
+                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                                 >
-                                    {isProcessingPayment ? (
-                                        <span>Processing...</span>
-                                    ) : (
-                                        <>
-                                            <CreditCard size={20} />
-                                            Unlock Pro - ₩9,900
-                                        </>
-                                    )}
+                                    <CreditCard size={20} />
+                                    Unlock Pro - ₩9,900
                                 </button>
                             )}
                         </div>

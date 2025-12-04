@@ -134,6 +134,7 @@ export default function MultiViewGrid() {
                                     type={video.type}
                                     title={video.title}
                                     className="w-full h-full"
+                                    onUpgrade={() => setIsProModalOpen(true)}
                                 />
                             </div>
                         </div>
