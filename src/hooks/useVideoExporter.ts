@@ -1,19 +1,32 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { ScriptLine } from '../lib/mockData';
 
 interface UseVideoExporterProps {
     videoRef: React.RefObject<HTMLVideoElement | null>;
     script: ScriptLine[];
+    title?: string;
 }
 
-export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
+export function useVideoExporter({ videoRef, script, title = 'video' }: UseVideoExporterProps) {
     const [isExporting, setIsExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const isExportingRef = useRef(false);
     const cancelledRef = useRef(false);
+
+    // Audio Context Management
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const destinationNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+
+    // Cleanup function to close audio context when component unmounts
+    useEffect(() => {
+        return () => {
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
+        };
+    }, []);
 
     const cancelExport = () => {
         cancelledRef.current = true;
@@ -28,20 +41,19 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         if (video) {
             video.pause();
             video.muted = false;
-            // Reconnect audio to speakers if needed (refreshing src usually resets this, but let's be safe)
-            // Actually, closing the AudioContext or disconnecting usually restores default behavior? 
-            // No, MediaElementSource "hijacks" it. The easiest way to restore is often to reload the src or just let the cleanup handle it.
-            // But since we are likely just stopping, we should clean up the AudioContext.
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
+
+            if (audioContextRef.current && sourceNodeRef.current) {
+                try {
+                    // Reconnect to speakers (destination)
+                    sourceNodeRef.current.connect(audioContextRef.current.destination);
+                } catch (e) {
+                    console.warn("Could not reconnect to speakers", e);
+                }
             }
-            // Force a small seek or volume change to potentially reset audio routing if needed, 
-            // but usually closing context is enough or we might need to re-assign src if it gets stuck.
         }
     };
 
-    const exportVideo = async () => {
+    const exportVideo = async (quality: '720p' | '1080p' | '4k' = '720p') => {
         const video = videoRef.current;
         if (!video) return;
 
@@ -55,28 +67,58 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         const originalMuted = video.muted;
         const wasPlaying = !video.paused;
 
+        // Resolution settings
+        let width = 1280;
+        let height = 720;
+        if (quality === '1080p') {
+            width = 1920;
+            height = 1080;
+        } else if (quality === '4k') {
+            width = 3840;
+            height = 2160;
+        }
+
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        canvas.width = width;
+        canvas.height = height;
 
         const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
             ? 'video/webm;codecs=vp9'
             : 'video/webm';
 
         // --- Audio Setup ---
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current = audioCtx;
+        // Initialize AudioContext only once if possible, or reuse
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            audioContextRef.current = new AudioContextClass();
+        }
+        const audioCtx = audioContextRef.current;
 
-        // Create source from video element
-        // Note: This "hijacks" the audio, so it won't play through speakers (which is what we want!)
-        const source = audioCtx.createMediaElementSource(video);
-        sourceNodeRef.current = source;
+        // Create MediaElementSource only once per video element
+        if (!sourceNodeRef.current) {
+            try {
+                sourceNodeRef.current = audioCtx.createMediaElementSource(video);
+            } catch (e) {
+                console.warn("MediaElementSource already exists or failed", e);
+            }
+        }
 
+        // Create a new destination for this export session
         const dest = audioCtx.createMediaStreamDestination();
-        source.connect(dest);
+        destinationNodeRef.current = dest;
+
+        if (sourceNodeRef.current) {
+            // Disconnect from speakers (destination) if connected
+            try {
+                sourceNodeRef.current.disconnect(audioCtx.destination);
+            } catch (e) { /* ignore */ }
+
+            // Connect to stream destination
+            sourceNodeRef.current.connect(dest);
+        }
 
         const audioTrack = dest.stream.getAudioTracks()[0];
         // -------------------
@@ -86,7 +128,7 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
             stream.addTrack(audioTrack);
         }
 
-        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: quality === '4k' ? 8000000 : 2500000 });
         mediaRecorderRef.current = mediaRecorder;
 
         const chunks: Blob[] = [];
@@ -96,9 +138,7 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         };
 
         mediaRecorder.onstop = () => {
-            // Check if cancelled
             if (cancelledRef.current) {
-                // Cleanup without downloading
                 cleanup();
                 return;
             }
@@ -108,7 +148,12 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `gridcast_export_${Date.now()}.webm`;
+
+                // Format filename: Title_Quality_Date.webm
+                const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const dateStr = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                a.download = `${safeTitle}_${quality}_${dateStr}.webm`;
+
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -121,37 +166,34 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         const cleanup = () => {
             setIsExporting(false);
             setExportProgress(0);
+            isExportingRef.current = false;
 
             // Restore video state
             video.currentTime = originalTime;
             video.volume = originalVolume;
             video.muted = originalMuted;
 
-            // Cleanup Audio Context
-            if (audioContextRef.current) {
-                audioContextRef.current.close().then(() => {
-                    audioContextRef.current = null;
-                });
+            // Reconnect audio to speakers
+            if (audioContextRef.current && sourceNodeRef.current) {
+                try {
+                    // Disconnect from recording destination
+                    if (destinationNodeRef.current) {
+                        sourceNodeRef.current.disconnect(destinationNodeRef.current);
+                    }
+                    // Connect back to speakers
+                    sourceNodeRef.current.connect(audioContextRef.current.destination);
+                } catch (e) {
+                    console.warn("Audio routing cleanup failed", e);
+                }
             }
 
-            // Important: To restore audio to speakers, we might need to re-load the video
-            // because createMediaElementSource permanently redirects it.
-            // A simple way is to re-assign the src (if it's a blob url) or just let the user re-play.
-            // However, React might handle this if the component re-renders or we can try to reconnect to destination?
-            // You can't "disconnect" a MediaElementSource to restore default behavior easily.
-            // The standard workaround is to clone the node or re-set src.
-            // Since we are using a blob URL or file path, let's just leave it for now. 
-            // If the user complains about no audio AFTER export, we'll fix that.
-            // Actually, let's try to be safe:
-            // video.load(); // This might reset position, which we just restored.
-
-            if (wasPlaying) video.play();
+            if (wasPlaying) {
+                video.play().catch(() => { });
+            }
         };
 
         video.pause();
         video.currentTime = 0;
-        // We MUST NOT mute the video, otherwise the captured stream is silent.
-        // The MediaElementSource will prevent it from playing to speakers.
         video.muted = false;
 
         await new Promise<void>((resolve) => {
@@ -162,12 +204,13 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
             video.addEventListener('seeked', handleSeeked);
             if (video.currentTime === 0) {
                 video.removeEventListener('seeked', handleSeeked);
-                resolve();
+                setTimeout(resolve, 50);
+            } else {
+                setTimeout(() => {
+                    video.removeEventListener('seeked', handleSeeked);
+                    resolve();
+                }, 1000);
             }
-            setTimeout(() => {
-                video.removeEventListener('seeked', handleSeeked);
-                resolve();
-            }, 1000);
         });
 
         mediaRecorder.start();
@@ -183,20 +226,20 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
         const drawFrame = () => {
             if (!isExportingRef.current) return;
 
-            // Check for completion
             if (video.ended || (video.duration > 0 && video.currentTime >= video.duration - 0.1)) {
                 mediaRecorder.stop();
-                isExportingRef.current = false;
                 return;
             }
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Watermark
-            ctx.font = 'bold 24px sans-serif';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.textAlign = 'right';
-            ctx.fillText('Made with GridCast', canvas.width - 20, 40);
+            // Watermark (Only for 720p/Free)
+            if (quality === '720p') {
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.textAlign = 'right';
+                ctx.fillText('Made with GridCast', canvas.width - 20, 40);
+            }
 
             // Subtitles
             const currentTime = video.currentTime;
@@ -205,12 +248,12 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
             );
 
             if (currentLine) {
-                ctx.font = '24px sans-serif';
+                const fontSize = quality === '4k' ? 72 : quality === '1080p' ? 48 : 24;
+                ctx.font = `${fontSize}px sans-serif`;
                 ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
 
-                // Wrap text logic for canvas
                 const maxWidth = canvas.width * 0.9;
                 const words = currentLine.text.split(' ');
                 let line = '';
@@ -229,12 +272,12 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
                 }
                 lines.push(line);
 
-                const lineHeight = 30;
-                const startY = canvas.height - 40 - (lines.length - 1) * lineHeight;
+                const lineHeight = fontSize * 1.2;
+                const startY = canvas.height - (fontSize * 1.5) - (lines.length - 1) * lineHeight;
 
                 ctx.shadowColor = 'black';
                 ctx.shadowBlur = 4;
-                ctx.lineWidth = 4;
+                ctx.lineWidth = fontSize / 6;
                 ctx.strokeStyle = 'black';
 
                 lines.forEach((l, i) => {
@@ -242,7 +285,7 @@ export function useVideoExporter({ videoRef, script }: UseVideoExporterProps) {
                     ctx.strokeText(l, canvas.width / 2, y);
                     ctx.shadowBlur = 0;
                     ctx.fillText(l, canvas.width / 2, y);
-                    ctx.shadowBlur = 4; // Restore for next line
+                    ctx.shadowBlur = 4;
                 });
             }
 

@@ -30,6 +30,13 @@ export default function Login() {
                     {isLoading ? 'Loading...' : 'Sign in with Google'}
                 </button>
 
+                <button
+                    onClick={() => navigate('/')}
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
+                >
+                    Continue as Guest
+                </button>
+
                 <p className="mt-6 text-xs text-white/40">
                     By signing in, you agree to our Terms of Service and Privacy Policy.
                 </p>

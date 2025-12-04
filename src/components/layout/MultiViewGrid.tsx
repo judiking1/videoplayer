@@ -16,7 +16,7 @@ interface VideoInstance {
 
 export default function MultiViewGrid() {
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user, isPro, isLoading } = useAuthStore();
     const [videos, setVideos] = useState<VideoInstance[]>([
         {
             id: 'demo-1',
@@ -60,17 +60,21 @@ export default function MultiViewGrid() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => setIsProModalOpen(true)}
-                        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-all group"
-                    >
-                        <Crown size={14} className="text-indigo-400 group-hover:text-indigo-300" />
-                        <span className="text-xs font-semibold text-indigo-300 group-hover:text-white">Upgrade to Pro</span>
-                    </button>
+                    {!isLoading && !isPro && (
+                        <button
+                            onClick={() => setIsProModalOpen(true)}
+                            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-all group"
+                        >
+                            <Crown size={14} className="text-indigo-400 group-hover:text-indigo-300" />
+                            <span className="text-xs font-semibold text-indigo-300 group-hover:text-white">Upgrade to Pro</span>
+                        </button>
+                    )}
 
                     <div className="h-6 w-px bg-white/10 mx-2" />
 
-                    {user ? (
+                    {isLoading ? (
+                        <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+                    ) : user ? (
                         <button
                             onClick={() => navigate('/profile')}
                             className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg border border-white/10 hover:scale-105 transition-transform"
@@ -122,9 +126,13 @@ export default function MultiViewGrid() {
                             </div>
 
                             <div className="flex-1 min-h-0 relative">
+                                <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    <h3 className="text-white font-medium truncate shadow-black drop-shadow-md">{video.title}</h3>
+                                </div>
                                 <VideoPlayer
                                     src={video.src}
                                     type={video.type}
+                                    title={video.title}
                                     className="w-full h-full"
                                 />
                             </div>

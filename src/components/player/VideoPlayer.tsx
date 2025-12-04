@@ -16,9 +16,10 @@ interface VideoPlayerProps {
     className?: string;
     poster?: string;
     autoPlay?: boolean;
+    title?: string;
 }
 
-export default function VideoPlayer({ src, type, className, poster, autoPlay = false }: VideoPlayerProps) {
+export default function VideoPlayer({ src, type, className, poster, autoPlay = false, title }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -36,7 +37,8 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
 
     const { isExporting, exportProgress, exportVideo, cancelExport } = useVideoExporter({
         videoRef,
-        script
+        script,
+        title
     });
 
     useEffect(() => {
@@ -171,9 +173,9 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
         exportVideo();
     };
 
-    const handleExportPro = () => {
-        alert("Please contact admin to unlock Pro features!");
+    const handleExportPro = (quality: '1080p' | '4k') => {
         setIsExportModalOpen(false);
+        exportVideo(quality);
     };
 
     return (
