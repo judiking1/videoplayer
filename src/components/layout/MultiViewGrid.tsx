@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, Zap, Crown, LayoutGrid } from 'lucide-react';
+import { X, Upload, Crown, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import VideoPlayer from '../player/VideoPlayer';
@@ -53,8 +53,8 @@ export default function MultiViewGrid() {
             {/* Header */}
             <header className="h-16 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-50">
                 <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-                        <Zap size={20} className="text-white fill-white" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden">
+                        <img src="/icon.png" alt="GridCast Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="font-bold text-lg tracking-tight">GridCast Video Editor</h1>
                 </div>
