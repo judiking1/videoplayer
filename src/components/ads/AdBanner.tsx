@@ -6,7 +6,6 @@ export default function AdBanner() {
     useEffect(() => {
         // In a real implementation, you would push the ad to the adsbygoogle array here
         // (window.adsbygoogle = window.adsbygoogle || []).push({});
-        console.log("AdSense banner mounted");
     }, []);
 
     return (

@@ -18,29 +18,7 @@ export interface PaymentResponse {
 
 declare global {
     interface Window {
-        PortOne: any;
-    }
-}
-export interface PaymentData {
-    orderName: string;
-    totalAmount: number;
-    currency: string;
-    payMethod: string;
-    customer: {
-        email?: string;
-        fullName?: string;
-        phoneNumber?: string;
-    };
-}
-
-export interface PaymentResponse {
-    code?: string;
-    paymentId?: string;
-    message?: string;
-}
-
-declare global {
-    interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         PortOne: any;
     }
 }
@@ -68,7 +46,7 @@ export const requestPayment = async (data: PaymentData): Promise<PaymentResponse
         }
 
         return { paymentId: response.paymentId };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         return { code: "EXCEPTION", message: error.message };
     }
 };

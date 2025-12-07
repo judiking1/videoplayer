@@ -102,7 +102,9 @@ export function useVideoExporter({ videoRef, script, title = 'video' }: UseVideo
             try {
                 sourceNodeRef.current = audioCtx.createMediaElementSource(video);
             } catch (e) {
-                console.warn("MediaElementSource already exists or failed", e);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const _e = e;
+                console.warn("MediaElementSource already exists or failed");
             }
         }
 

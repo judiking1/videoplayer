@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MultiViewGrid from './components/layout/MultiViewGrid';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import { useAuthStore } from './store/authStore';
 import { useEffect } from 'react';
 
@@ -32,6 +34,8 @@ function App() {
               <Profile />
             </ProtectedRoute>
           } />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
       </div>
     </BrowserRouter>

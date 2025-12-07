@@ -49,7 +49,7 @@ export default function Login() {
                 </button>
 
                 <p className="mt-6 text-xs text-white/40">
-                    By signing in, you agree to our Terms of Service and Privacy Policy.
+                    By signing in, you agree to our <a href="/terms" className="hover:text-white underline">Terms of Service</a> and <a href="/privacy" className="hover:text-white underline">Privacy Policy</a>.
                 </p>
             </div>
         </div>
