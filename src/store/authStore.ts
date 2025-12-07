@@ -9,6 +9,7 @@ interface AuthState {
     isPro: boolean;
     initialize: () => Promise<void>;
     signInWithGoogle: () => Promise<void>;
+    signInWithKakao: () => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -57,6 +58,14 @@ export const useAuthStore = create<AuthState>((set) => ({
             provider: 'google',
         });
     },
+
+    signInWithKakao: async () => {
+        await supabase.auth.signInWithOAuth({
+            provider: 'kakao',
+        });
+    },
+
+
 
     signOut: async () => {
         await supabase.auth.signOut();

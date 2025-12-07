@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { X, CheckCircle, CreditCard, Crown } from 'lucide-react';
+import { X, CheckCircle, Copy, Send } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { requestPayment } from '../../lib/portone';
-import { supabase } from '../../lib/supabase';
 
 interface PricingModalProps {
     isOpen: boolean;
@@ -11,57 +9,27 @@ interface PricingModalProps {
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     const { user } = useAuthStore();
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isRequested, setIsRequested] = useState(false);
 
     if (!isOpen) return null;
 
-    const handlePayment = async () => {
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        alert(`Copied: ${text}`);
+    };
+
+    const handleRequest = () => {
         if (!user) {
-            alert("Please log in to upgrade.");
+            alert("Please log in first.");
             return;
         }
-
-        setIsProcessing(true);
-        try {
-            const response = await requestPayment({
-                orderName: "GridCast Pro Subscription",
-                totalAmount: 9900,
-                currency: "KRW",
-                payMethod: "EASY_PAY",
-                customer: {
-                    email: user.email || "",
-                    fullName: user.email?.split('@')[0] || "User",
-                    phoneNumber: "010-1234-5678",
-                }
-            });
-
-
-
-            // ...
-
-            if (!response.code) {
-                // Update Supabase profile
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ is_pro: true })
-                    .eq('id', user.id);
-
-                if (error) {
-                    console.error("Error updating profile:", error);
-                    alert("Payment successful but failed to update profile. Please contact support.");
-                } else {
-                    alert("Payment successful! You are now a Pro member.");
-                    window.location.reload();
-                }
-            } else {
-                alert(`Payment failed: ${response.message}`);
-            }
-        } catch (error) {
-            console.error("Payment error:", error);
-            alert("An error occurred during payment.");
-        } finally {
-            setIsProcessing(false);
-        }
+        // In a real app, you would send an API request here to notify admin
+        setIsRequested(true);
+        alert("Deposit notification sent! We will activate your Pro account after confirmation.");
+        setTimeout(() => {
+            onClose();
+            setIsRequested(false);
+        }, 2000);
     };
 
     return (
@@ -75,14 +43,10 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 </button>
 
                 <div className="p-8 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
-                        <Crown size={32} className="text-white" />
-                    </div>
-
                     <h2 className="text-2xl font-bold text-white mb-2">Upgrade to Pro</h2>
-                    <p className="text-zinc-400 mb-8">Unlock the full potential of GridCast</p>
+                    <p className="text-zinc-400 mb-6">Unlock full potential via Bank Transfer</p>
 
-                    <div className="space-y-4 mb-8 text-left bg-white/5 p-6 rounded-xl border border-white/10">
+                    <div className="space-y-4 mb-6 text-left bg-white/5 p-5 rounded-xl border border-white/10">
                         <div className="flex items-center gap-3 text-zinc-200">
                             <CheckCircle size={18} className="text-green-500 shrink-0" />
                             <span>Remove Watermark</span>
@@ -101,17 +65,45 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                         </div>
                     </div>
 
+                    {/* Bank Transfer Info */}
+                    <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-6 text-left">
+                        <p className="text-blue-200 text-xs font-semibold uppercase mb-2 tracking-wider">Deposit Account</p>
+                        <div className="flex items-center justify-between bg-black/40 p-3 rounded-lg border border-blue-500/10 mb-2">
+                            <div>
+                                <p className="text-zinc-400 text-xs">ShinhanBank</p>
+                                <p className="text-white font-mono font-medium">110-344-748940</p>
+                            </div>
+                            <button
+                                onClick={() => handleCopy("110-344-748940")}
+                                className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                title="Copy Account Number"
+                            >
+                                <Copy size={16} />
+                            </button>
+                        </div>
+                        <div className="text-xs text-zinc-400">
+                            <p>Amount: <span className="text-white font-bold">₩9,900</span> (Lifetime)</p>
+                            <p className="mt-1">Owner: <span className="text-zinc-300">Lee WonBae</span></p>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-zinc-500 mb-6 px-4 leading-relaxed">
+                        After depositing, please click the button below.
+                        <br />
+                        We will upgrade your account within 24 hours.
+                    </p>
+
                     <button
-                        onClick={handlePayment}
-                        disabled={isProcessing}
+                        onClick={handleRequest}
+                        disabled={isRequested}
                         className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/20"
                     >
-                        {isProcessing ? (
-                            <span>Processing...</span>
+                        {isRequested ? (
+                            <span>Request Sent!</span>
                         ) : (
                             <>
-                                <CreditCard size={20} />
-                                Upgrade for ₩9,900
+                                <Send size={20} />
+                                I Sent the Money
                             </>
                         )}
                     </button>
