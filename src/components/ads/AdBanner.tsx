@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export default function AdBanner() {
-    const adRef = useRef<HTMLDivElement>(null);
+    // const adRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // In a real implementation, you would push the ad to the adsbygoogle array here
@@ -12,9 +12,9 @@ export default function AdBanner() {
     return (
         <div className="w-full h-[90px] bg-zinc-900 border-t border-white/10 flex items-center justify-center overflow-hidden shrink-0">
             <div className="text-zinc-600 text-xs font-mono border border-dashed border-zinc-700 p-4 rounded">
-                Google AdSense Banner Space
+                Admin Email
                 <br />
-                (728x90 Leaderboard)
+                (judiking1@naver.com)
             </div>
             {/* 
             <ins className="adsbygoogle"
