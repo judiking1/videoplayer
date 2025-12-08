@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText, Share2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface ControlsProps {
@@ -80,22 +80,22 @@ export default function Controls({
             </div>
 
             <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 2xl:gap-4">
                     <button
                         onClick={onPlayPause}
-                        className="hover:bg-white/10 p-2 rounded-full transition-colors"
+                        className="hover:bg-white/10 p-1 2xl:p-2 rounded-full transition-colors"
                     >
-                        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                        {isPlaying ? <Pause size={20} className="2xl:w-6 2xl:h-6" /> : <Play size={20} className="2xl:w-6 2xl:h-6" />}
                     </button>
 
-                    <div className="flex items-center gap-2 group/volume relative">
+                    <div className="flex items-center gap-1 2xl:gap-2 group/volume relative">
                         <button
                             onClick={onToggleMute}
-                            className="hover:bg-white/10 p-2 rounded-full transition-colors"
+                            className="hover:bg-white/10 p-1 2xl:p-2 rounded-full transition-colors"
                         >
-                            {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                            {isMuted || volume === 0 ? <VolumeX size={18} className="2xl:w-5 2xl:h-5" /> : <Volume2 size={18} className="2xl:w-5 2xl:h-5" />}
                         </button>
-                        <div className="w-0 overflow-hidden group-hover/volume:w-24 transition-all duration-300">
+                        <div className="w-0 overflow-hidden group-hover/volume:w-16 2xl:group-hover/volume:w-24 transition-all duration-300">
                             <input
                                 type="range"
                                 min={0}
@@ -103,28 +103,28 @@ export default function Controls({
                                 step={0.1}
                                 value={isMuted ? 0 : volume}
                                 onChange={(e) => onVolumeChange(Number(e.target.value))}
-                                className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                                className="w-16 2xl:w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
                             />
                         </div>
                     </div>
 
-                    <span className="text-sm font-medium font-mono">
+                    <span className="text-[10px] 2xl:text-sm font-medium font-mono whitespace-nowrap">
                         {formatTime(currentTime)} / {formatTime(duration)}
                     </span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 2xl:gap-4">
                     {/* Playback Rate Dropdown */}
                     <div className="relative" ref={speedMenuRef}>
                         <button
                             onClick={() => setIsSpeedMenuOpen(!isSpeedMenuOpen)}
-                            className="text-sm font-bold hover:bg-white/10 px-2 py-1 rounded transition-colors"
+                            className="text-xs 2xl:text-sm font-bold hover:bg-white/10 px-1.5 py-1 rounded transition-colors"
                         >
                             {playbackRate}x
                         </button>
 
                         {isSpeedMenuOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-md rounded-lg p-2 flex flex-col gap-1 min-w-[80px] shadow-xl border border-white/10">
+                            <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-md rounded-lg p-2 flex flex-col gap-1 min-w-[80px] shadow-xl border border-white/10 z-50">
                                 {[0.5, 1, 1.25, 1.5, 2].map((rate) => (
                                     <button
                                         key={rate}
@@ -147,26 +147,28 @@ export default function Controls({
                     <button
                         onClick={onToggleScript}
                         className={cn(
-                            "hover:bg-white/10 p-2 rounded-full transition-colors",
+                            "hover:bg-white/10 p-1 2xl:p-2 rounded-full transition-colors",
                             isScriptOpen && "text-blue-400 bg-white/10"
                         )}
                         title="Toggle Transcript"
                     >
-                        <FileText size={20} />
+                        <FileText size={18} className="2xl:w-5 2xl:h-5" />
                     </button>
 
                     <button
                         onClick={onExport}
-                        className="bg-white text-black px-3 py-1 rounded-lg text-sm font-bold hover:bg-zinc-200 transition-colors"
+                        className="bg-white text-black p-1 2xl:px-3 2xl:py-1 rounded-lg text-xs 2xl:text-sm font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center"
+                        title="Export Video"
                     >
-                        Export
+                        <span className="2xl:hidden"><Share2 size={16} /></span>
+                        <span className="hidden 2xl:inline">Export</span>
                     </button>
 
                     <button
                         onClick={onToggleFullscreen}
-                        className="hover:bg-white/10 p-2 rounded-full transition-colors"
+                        className="hover:bg-white/10 p-1 2xl:p-2 rounded-full transition-colors"
                     >
-                        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                        {isFullscreen ? <Minimize size={18} className="2xl:w-5 2xl:h-5" /> : <Maximize size={18} className="2xl:w-5 2xl:h-5" />}
                     </button>
                 </div>
             </div>

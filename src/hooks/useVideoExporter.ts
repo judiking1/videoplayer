@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { ScriptLine } from '../lib/mockData';
 
 interface UseVideoExporterProps {
@@ -79,7 +79,8 @@ export function useVideoExporter({ videoRef, script, title = 'video' }: UseVideo
         }
 
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ctx = canvas.getContext('2d') as any;
         if (!ctx) return;
 
         canvas.width = width;
@@ -92,6 +93,7 @@ export function useVideoExporter({ videoRef, script, title = 'video' }: UseVideo
         // --- Audio Setup ---
         // Initialize AudioContext only once if possible, or reuse
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
             audioContextRef.current = new AudioContextClass();
         }
@@ -116,7 +118,7 @@ export function useVideoExporter({ videoRef, script, title = 'video' }: UseVideo
             // Disconnect from speakers (destination) if connected
             try {
                 sourceNodeRef.current.disconnect(audioCtx.destination);
-            } catch (e) { /* ignore */ }
+            } catch { /* ignore */ }
 
             // Connect to stream destination
             sourceNodeRef.current.connect(dest);

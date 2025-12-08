@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import VideoPlayer from '../player/VideoPlayer';
 import { cn } from '../../lib/utils';
-import AdBanner from '../ads/AdBanner';
 import PricingModal from '../payment/PricingModal';
+
+import Footer from './Footer';
 
 interface VideoInstance {
     id: string;
@@ -48,16 +49,48 @@ export default function MultiViewGrid() {
         setVideos((prev) => prev.filter((v) => v.id !== id));
     };
 
+    const handleReset = () => {
+        if (videos.length > 0) {
+            if (window.confirm("Are you sure you want to clear your workspace?")) {
+                setVideos([]);
+            }
+        } else {
+            // Already empty, maybe just go home (reload or nothing)
+            setVideos([{
+                id: 'demo-1',
+                src: '/sample.mp4',
+                type: 'video/mp4',
+                title: 'Sample Video'
+            }]);
+        }
+    };
+
+    const getGridCols = () => {
+        const count = videos.length;
+        if (count <= 1) return "grid-cols-1";
+        if (count === 2) return "grid-cols-1 md:grid-cols-2";
+        if (count <= 4) return "grid-cols-1 md:grid-cols-2 lg:grid-cols-2";
+        if (count <= 6) return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+        return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+    }
+
     return (
         <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
             {/* Header */}
             <header className="h-16 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-50">
-                <div className="flex items-center gap-4">
+                <button
+                    onClick={handleReset}
+                    className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+                    title="Reset Workspace"
+                >
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden">
                         <img src="/icon.png" alt="GridCast Logo" className="w-full h-full object-cover" />
                     </div>
-                    <h1 className="font-bold text-lg tracking-tight">GridCast Video Editor</h1>
-                </div>
+                    <h1 className="font-bold text-lg tracking-tight whitespace-nowrap text-ellipsis overflow-hidden max-w-[200px] md:max-w-none">
+                        <span className="md:hidden">GridCast</span>
+                        <span className="hidden md:inline">GridCast Video Editor</span>
+                    </h1>
+                </button>
 
                 <div className="flex items-center gap-4">
                     {!isLoading && !isPro && (
@@ -105,68 +138,66 @@ export default function MultiViewGrid() {
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 p-4 overflow-hidden flex flex-col relative bg-zinc-950">
-                <div className={cn(
-                    "flex-1 grid gap-4 transition-all duration-300 min-h-0",
-                    videos.length === 1 ? "grid-cols-1" :
-                        videos.length === 2 ? "grid-cols-2" :
-                            videos.length <= 4 ? "grid-cols-2" :
-                                "grid-cols-3"
-                )}>
-                    {videos.map((video) => (
-                        <div key={video.id} className="relative group flex flex-col min-h-0 bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5">
-                            <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={() => removeVideo(video.id)}
-                                    className="p-2 bg-black/50 hover:bg-red-500/80 text-white rounded-full backdrop-blur-md transition-colors"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 min-h-0 relative">
-                                <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    <h3 className="text-white font-medium truncate shadow-black drop-shadow-md">{video.title}</h3>
+            {/* Main Content - Scrollable */}
+            <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col bg-zinc-950 relative scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                <div className="flex-1 p-4">
+                    <div className={cn(
+                        "grid gap-4 transition-all duration-300",
+                        getGridCols(),
+                        videos.length > 0 ? "auto-rows-auto" : "h-full"
+                    )}>
+                        {videos.map((video) => (
+                            <div key={video.id} className="relative group flex flex-col bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5 2xl:aspect-video">
+                                <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => removeVideo(video.id)}
+                                        className="p-2 bg-black/50 hover:bg-red-500/80 text-white rounded-full backdrop-blur-md transition-colors"
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 </div>
-                                <VideoPlayer
-                                    src={video.src}
-                                    type={video.type}
-                                    title={video.title}
-                                    className="w-full h-full"
-                                    onUpgrade={() => setIsProModalOpen(true)}
-                                />
-                            </div>
-                        </div>
-                    ))}
 
-                    {videos.length === 0 && (
-                        <div className="col-span-full h-full flex flex-col items-center justify-center text-zinc-500 border-2 border-dashed border-zinc-800 rounded-2xl bg-zinc-900/20">
-                            <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 shadow-xl border border-white/5">
-                                <LayoutGrid size={32} className="text-zinc-600" />
+                                <div className="flex-1 relative">
+                                    <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <h3 className="text-white font-medium truncate shadow-black drop-shadow-md">{video.title}</h3>
+                                    </div>
+                                    <VideoPlayer
+                                        src={video.src}
+                                        type={video.type}
+                                        title={video.title}
+                                        className="w-full h-full"
+                                        onUpgrade={() => setIsProModalOpen(true)}
+                                    />
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Start Your Project</h3>
-                            <p className="text-zinc-400 mb-6 max-w-md text-center">
-                                Import videos to start editing, adding subtitles, and creating content.
-                            </p>
-                            <label className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer transition-all hover:scale-105 shadow-xl shadow-blue-500/20 font-bold">
-                                <Upload size={20} />
-                                <span>Import Video</span>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="video/*"
-                                    className="hidden"
-                                    onChange={handleFileUpload}
-                                />
-                            </label>
-                        </div>
-                    )}
+                        ))}
+
+                        {videos.length === 0 && (
+                            <div className="col-span-full h-[60vh] flex flex-col items-center justify-center text-zinc-500 border-2 border-dashed border-zinc-800 rounded-2xl bg-zinc-900/20">
+                                <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 shadow-xl border border-white/5">
+                                    <LayoutGrid size={32} className="text-zinc-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Start Your Project</h3>
+                                <p className="text-zinc-400 mb-6 max-w-md text-center">
+                                    Import videos to start editing, adding subtitles, and creating content.
+                                </p>
+                                <label className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer transition-all hover:scale-105 shadow-xl shadow-blue-500/20 font-bold">
+                                    <Upload size={20} />
+                                    <span>Import Video</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="video/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                    />
+                                </label>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="mt-4">
-                    <AdBanner />
-                </div>
+                <Footer />
             </main>
 
             <PricingModal
@@ -176,3 +207,4 @@ export default function MultiViewGrid() {
         </div>
     );
 }
+

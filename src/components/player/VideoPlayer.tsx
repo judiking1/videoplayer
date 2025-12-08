@@ -182,29 +182,62 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
     return (
         <div
             ref={containerRef}
-            className={cn("relative group bg-black overflow-hidden rounded-xl shadow-2xl", className)}
+            className={cn(
+                "group bg-black md:overflow-hidden rounded-xl shadow-2xl flex flex-col 2xl:block relative",
+                className
+            )}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onContextMenu={(e) => e.preventDefault()}
             style={{ containerType: 'inline-size' }} // Enable container queries
         >
-            <video
-                ref={videoRef}
-                className="w-full h-full object-contain"
-                poster={poster}
-                playsInline
-                onClick={togglePlay}
-                crossOrigin="anonymous"
-            />
+            {/* Video Container - Aspect Video on Mobile/Laptop, Full on Huge Screens */}
+            <div className="relative w-full aspect-video 2xl:aspect-auto 2xl:h-full 2xl:absolute 2xl:inset-0">
+                <video
+                    ref={videoRef}
+                    className="w-full h-full object-contain"
+                    poster={poster}
+                    playsInline
+                    onClick={togglePlay}
+                    crossOrigin="anonymous"
+                />
 
-            {/* Security Features */}
-            <Watermark />
-            <div className="absolute inset-0 z-10" onClick={togglePlay} />
+                {/* Security Features */}
+                <Watermark />
+                <div className="absolute inset-0 z-10" onClick={togglePlay} />
 
-            {/* Subtitles */}
-            <SubtitleOverlay script={script} currentTime={currentTime} />
+                {/* Subtitles */}
+                <SubtitleOverlay script={script} currentTime={currentTime} />
 
-            {/* Script Viewer */}
+                {/* Controls Overlay */}
+                <div
+                    className={cn(
+                        "absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-300 px-4 pb-4 pt-12 bg-gradient-to-t from-black/80 to-transparent",
+                        showControls && !isExporting ? "opacity-100" : "opacity-0"
+                    )}
+                >
+                    <Controls
+                        isPlaying={isPlaying}
+                        onPlayPause={togglePlay}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onSeek={handleSeek}
+                        volume={volume}
+                        onVolumeChange={handleVolumeChange}
+                        isMuted={isMuted}
+                        onToggleMute={toggleMute}
+                        isFullscreen={isFullscreen}
+                        onToggleFullscreen={toggleFullscreen}
+                        playbackRate={playbackRate}
+                        onPlaybackRateChange={handlePlaybackRateChange}
+                        onToggleScript={() => setIsScriptOpen(!isScriptOpen)}
+                        isScriptOpen={isScriptOpen}
+                        onExport={() => setIsExportModalOpen(true)}
+                    />
+                </div>
+            </div>
+
+            {/* Script Viewer - Relative Block below video on Mobile, Absolute Overlay on Desktop */}
             <ScriptViewer
                 script={script}
                 currentTime={currentTime}
@@ -247,32 +280,6 @@ export default function VideoPlayer({ src, type, className, poster, autoPlay = f
                     </button>
                 </div>
             )}
-
-            <div
-                className={cn(
-                    "absolute bottom-0 left-0 right-0 z-20 transition-opacity duration-300 px-4 pb-4 pt-12 bg-gradient-to-t from-black/80 to-transparent",
-                    showControls && !isExporting ? "opacity-100" : "opacity-0"
-                )}
-            >
-                <Controls
-                    isPlaying={isPlaying}
-                    onPlayPause={togglePlay}
-                    currentTime={currentTime}
-                    duration={duration}
-                    onSeek={handleSeek}
-                    volume={volume}
-                    onVolumeChange={handleVolumeChange}
-                    isMuted={isMuted}
-                    onToggleMute={toggleMute}
-                    isFullscreen={isFullscreen}
-                    onToggleFullscreen={toggleFullscreen}
-                    playbackRate={playbackRate}
-                    onPlaybackRateChange={handlePlaybackRateChange}
-                    onToggleScript={() => setIsScriptOpen(!isScriptOpen)}
-                    isScriptOpen={isScriptOpen}
-                    onExport={() => setIsExportModalOpen(true)}
-                />
-            </div>
         </div>
     );
 }

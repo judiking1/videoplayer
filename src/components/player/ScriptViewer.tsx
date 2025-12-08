@@ -173,8 +173,7 @@ export default function ScriptViewer({ script, currentTime, onSeek, isOpen, onCl
     return (
         <div
             ref={panelRef}
-            className="absolute top-0 right-0 bottom-20 bg-black/95 backdrop-blur-xl border-l border-white/10 z-40 flex flex-col transition-transform duration-300 shadow-2xl rounded-bl-xl"
-            style={{ width: 'clamp(250px, 30cqw, 320px)' }}
+            className="w-full min-h-[400px] h-auto max-h-[70vh] 2xl:absolute 2xl:top-0 2xl:right-0 2xl:bottom-20 2xl:h-auto 2xl:w-[clamp(250px,30cqw,320px)] bg-black/95 backdrop-blur-xl 2xl:border-l border-t 2xl:border-t-0 border-white/10 z-40 flex flex-col transition-transform duration-300 shadow-2xl 2xl:rounded-bl-xl relative"
         >
             <div className="border-b border-white/10 flex justify-between items-center bg-zinc-900/50 rounded-tl-xl p-3">
                 <h3 className="text-white font-bold leading-tight text-sm">Transcript Editor</h3>
