@@ -15,7 +15,7 @@ export default function Footer() {
                     <Link to="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
                 </div>
 
-                <div className="hidden md:block w-px h-3 bg-zinc-800" />
+                <div className="w-px h-3 bg-zinc-800" />
 
                 <p>&copy; {new Date().getFullYear()} GridCast. All rights reserved.</p>
             </div>

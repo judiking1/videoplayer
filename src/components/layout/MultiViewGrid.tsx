@@ -84,7 +84,7 @@ export default function MultiViewGrid() {
                     title="Reset Workspace"
                 >
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden">
-                        <img src="/icon.png" alt="GridCast Logo" className="w-full h-full object-cover" />
+                        <img src="/logo.webp" alt="GridCast Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="font-bold text-lg tracking-tight whitespace-nowrap text-ellipsis overflow-hidden max-w-[200px] md:max-w-none">
                         <span className="md:hidden">GridCast</span>
@@ -140,14 +140,18 @@ export default function MultiViewGrid() {
 
             {/* Main Content - Scrollable */}
             <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col bg-zinc-950 relative scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                <div className="flex-1 p-4">
+                <div className="flex-1 p-4 flex flex-col justify-center">
                     <div className={cn(
-                        "grid gap-4 transition-all duration-300",
+                        "grid gap-4 transition-all duration-300 w-full mx-auto",
+                        videos.length === 1 ? "max-w-[55vw]" : "max-w-[1600px]",
                         getGridCols(),
                         videos.length > 0 ? "auto-rows-auto" : "h-full"
                     )}>
                         {videos.map((video) => (
-                            <div key={video.id} className="relative group flex flex-col bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5 2xl:aspect-video">
+                            <div
+                                key={video.id}
+                                className="relative group flex flex-col bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5 transform-gpu 2xl:aspect-video"
+                            >
                                 <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => removeVideo(video.id)}
@@ -165,7 +169,7 @@ export default function MultiViewGrid() {
                                         src={video.src}
                                         type={video.type}
                                         title={video.title}
-                                        className="w-full h-full"
+                                        className="w-full"
                                         onUpgrade={() => setIsProModalOpen(true)}
                                     />
                                 </div>
